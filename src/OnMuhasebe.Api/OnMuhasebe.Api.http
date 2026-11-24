@@ -1,0 +1,53 @@
+# VS Code "REST Client" veya Visual Studio / Rider ile çalıştırılabilir.
+@base = http://localhost:5190
+
+### Giriş (yönetici)
+# @name giris
+POST {{base}}/api/auth/giris
+Content-Type: application/json
+
+{ "kullaniciAdi": "yonetici", "sifre": "Yonetici123!" }
+
+###
+@token = {{giris.response.body.accessToken}}
+
+### e-Fatura kullanıcısı cari ekle
+# @name cari
+POST {{base}}/api/cariler
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "vergiNo": "3973535717", "unvan": "Efe Toptan Ltd", "eFaturaEtiketi": "urn:mail:defaultpk@efe.com" }
+
+### Taslak fatura oluştur (alıcı kayıtlı olduğu için e-Fatura olur)
+# @name fatura
+POST {{base}}/api/faturalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cariId": "{{cari.response.body.id}}",
+  "senaryo": "Ticari",
+  "satirlar": [
+    { "urunAdi": "Vida", "miktar": 3, "birimFiyat": 33.335, "kdvOrani": 20, "iskontoOrani": 10 },
+    { "urunAdi": "Kitap", "miktar": 1, "birimFiyat": 100, "kdvOrani": 10 }
+  ]
+}
+
+### Gönder (numara alır)
+POST {{base}}/api/faturalar/{{fatura.response.body.id}}/gonder
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "seri": "EFE" }
+
+### Tahsilat
+POST {{base}}/api/tahsilatlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "cariId": "{{cari.response.body.id}}", "tutar": 150, "yontem": "Havale" }
+
+### Cari ekstresi
+GET {{base}}/api/cariler/{{cari.response.body.id}}/ekstre
+Authorization: Bearer {{token}}
